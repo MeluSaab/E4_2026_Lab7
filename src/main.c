@@ -1,9 +1,5 @@
 /************************************************************************************************
-Copyright (c) 2022-2023, Laboratorio de Microprocesadores
-Facultad de Ciencias Exactas y Tecnología, Universidad Nacional de Tucumán
-https://www.microprocesadores.unt.edu.ar/
-
-Copyright (c) 2022-2023, Esteban Volentini <evolentini@herrera.unt.edu.ar>
+Copyright (c) 2026, Saab Araoz Melina <saabaraozmelina@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -61,7 +57,9 @@ static placa_t placa;
 
 int main(void) {
     uint8_t entrada[4] = {4, 2, 3, 1};
-     uint16_t frecuencia = 0;
+    uint16_t frecuencia = 0;
+    
+    placa = BoardCreate();
 
     DisplayWriteBCD(placa->display, entrada, sizeof(entrada));
     while (true) {
