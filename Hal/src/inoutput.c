@@ -52,6 +52,7 @@ struct inoutput_output_s {
  * @param logic true si la tecla trabaja con lógica invertida (activo en bajo / PULL-UP),
  *              false si trabaja con lógica directa (activo en alto / PULL-DOWN).
  * @param last_state variable para almacenar el ultimo estado de la entrada digital
+ * @param debounce_counter variable para contar ciclos al apretar un boton
  *
  */
 struct inoutput_input_s {
@@ -59,6 +60,7 @@ struct inoutput_input_s {
     uint8_t pin;
     bool logic;
     bool last_state;
+    uint16_t debounce_counter;
 };
 
 /* === Private function declarations =============================================================================== */
@@ -136,6 +138,7 @@ inoutput_input_t InoutputInputCreate(uint32_t port, uint8_t pin, bool logic) {
     self->pin = pin;
     self->logic = logic;
     self -> last_state = InoutputInputGetState(self);
+    self->debounce_counter = 0;
    }
 
     Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, self -> port, self -> pin, false);
@@ -169,12 +172,25 @@ int InoutputInputHasChanged(inoutput_input_t self) {
     int resultado = INOUTPUT_INPUT_NO_EVENT;
     if (self != NULL) {
         bool actual = InoutputInputGetState(self);
-        if (actual && !self->last_state) {
-            resultado = INOUTPUT_INPUT_ACTIVATE_EVENT;
-        } else if (!actual && self->last_state) {
-            resultado = INOUTPUT_INPUT_DEACTIVATE_EVENT;
+
+        // Si el estado físico es distinto al último estado confirmado
+        if (actual != self->last_state) {
+            self->debounce_counter++;
+            
+            // Si el estado se mantuvo estable durante aprox 2 vueltas consecutivas
+            if (self->debounce_counter >= 2) { 
+                if (actual) {
+                    resultado = INOUTPUT_INPUT_ACTIVATE_EVENT;
+                } else {
+                    resultado = INOUTPUT_INPUT_DEACTIVATE_EVENT;
+                }
+                self->last_state = actual;
+                self->debounce_counter = 0;
+            }
+        } else {
+            // Si el ruido paró o el botón volvió a su estado anterior, reseteamos el contador
+            self->debounce_counter = 0;
         }
-        self->last_state = actual;
     }
     return resultado;
 }
