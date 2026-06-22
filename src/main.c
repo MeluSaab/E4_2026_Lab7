@@ -56,10 +56,10 @@ static placa_t placa;
 /* === Public function implementation ========================================================== */
 
 int main(void) {
-    uint8_t entrada[4] = {4, 2, 3, 1};
+    uint8_t entrada[4] = {0, 0, 0, 0};
     uint16_t frecuencia = 0;
     
-    placa = BoardCreate();
+    placa = PlacaCreate();
 
     DisplayWriteBCD(placa->display, entrada, sizeof(entrada));
     while (true) {
@@ -80,7 +80,7 @@ int main(void) {
         } 
 
         if(InoutputInputHasActivated(placa -> f2)){
-            entrada[2] = (entrada[32] + 1) % 10;
+            entrada[2] = (entrada[2] + 1) % 10;
             DisplayWriteBCD(placa -> display, entrada, sizeof(entrada));
         } 
 
@@ -93,6 +93,14 @@ int main(void) {
             entrada[0] = (entrada[0] + 1) % 10;
             DisplayWriteBCD(placa -> display, entrada, sizeof(entrada));
         } 
+        if(InoutputInputHasActivated(placa -> cancel)){
+            entrada[0] = 0;
+            entrada[1] = 0;
+            entrada[2] = 0;
+            entrada[3] = 0;
+            
+            DisplayWriteBCD(placa->display, entrada, sizeof(entrada));
+        }
 
         for(int i = 0; i < 50; i++){
             for(int delay = 0; delay < 1000; delay++){
