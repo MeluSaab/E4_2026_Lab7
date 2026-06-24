@@ -34,6 +34,8 @@ SPDX-License-Identifier: MIT
 #define MINUTE_POSITION 3
 #define HOURS_POSITION 1
 
+#define SNOOZE_TIME_IN_MINUTES 5
+
 /* === Private data type declarations ============================================================================== */
 
 /**
@@ -43,8 +45,10 @@ SPDX-License-Identifier: MIT
  * @param tick_per_second Guarda los ciclos necesarios que deben pasar para 1 segundo
  * @param tick_countewr Guarda la cuenta de cuantos ticks ocurrieron para saber si paso o no 1 segundo
  * @param alarm Guarda la alarma seteada
- * @param alarm_enabled Esppecifica si la alarma está activada
+ * @param alarm_enabled Esppecifica si la alarma está activada. True si está activa y false si esta inactiva
  * @param AlarmHandler Función que maneja el evento de la alarma
+ * @param snooze_time Guarda el horario temporal del snooze
+ * @param snooze_enable Esppecifica si la alarma está pospuesta. True si está activa y false si esta inactiva
  */
 struct clock_s{
     hour_t time;
@@ -55,6 +59,9 @@ struct clock_s{
     hour_t alarm;
     bool alarm_enabled;
     clock_event_t AlarmHandler;
+
+    hour_t snooze_time;
+    bool snooze_enabled;
 };
 
 static const uint8_t SECOND_MINUTE_LIMIT[2] = {6,0};
@@ -82,24 +89,28 @@ static bool ValidHour(hour_t hour);
 /**
  * @brief Función auxiliar para manejar los límites de cada posición del vector
  */
-static void IncreaceTimeBCD(clock_t clock, uint8_t position){
-    clock -> time[position]++;
+static void IncreaceVectorBCD(uint8_t * vector, uint8_t position) {
+    vector[position]++;
 
-    if (clock -> time[position] >= 10) {
-        clock -> time[position] = 0;
-        IncreaceTimeBCD(clock, position-1);
+    if (vector[position] >= 10) {
+        vector[position] = 0;
+        IncreaceVectorBCD(vector, position - 1);
 
-        if(position == SECONDS_POSITION || position == MINUTE_POSITION){
-            if(clock -> time[position-1] == SECOND_MINUTE_LIMIT[0]){
-                clock -> time[position-1] = 0;
-                IncreaceTimeBCD(clock, position-2);
+        // Si desbordan las unidades de segundo (pos 5) o unidades de minuto (pos 3)
+        if (position == SECONDS_POSITION || position == MINUTE_POSITION) {
+            // Evaluamos si el dígito de las decenas llegó a 6 (límite de 60)
+            if (vector[position - 1] == SECOND_MINUTE_LIMIT[0]) {
+                vector[position - 1] = 0;
+                // Saltamos 2 posiciones a la izquierda para incrementar el bloque siguiente
+                IncreaceVectorBCD(vector, position - 2);
             }
         }
     }
 
-    if(position == HOURS_POSITION){
-        if(clock -> time[position-1] >= HOUR_LIMIT[0] && clock -> time[position] == HOUR_LIMIT[1]){
-            memset(clock -> time, 0, sizeof(hour_t));
+    // Control de límite de 24 horas (posiciones 0 y 1)
+    if (position == HOURS_POSITION) {
+        if (vector[position - 1] >= HOUR_LIMIT[0] && vector[position] == HOUR_LIMIT[1]) {
+            memset(vector, 0, sizeof(hour_t));
         }
     }
 }
@@ -181,14 +192,23 @@ bool ClockSetUpCurrentTime(clock_t clock, const hour_t new_hour){
  */
 void ClockNewTick(clock_t clock){
     clock -> ticks_counter++;
+    bool activate_alarma = false;
 
     if(clock -> ticks_counter >= clock -> ticks_per_second){
         clock -> ticks_counter = 0;
-        IncreaceTimeBCD(clock, SECONDS_POSITION);
+        IncreaceVectorBCD(clock -> time, SECONDS_POSITION);
 
         // --- CONTROL DE ALARMA ---
         if (clock -> alarm_enabled && clock -> AlarmHandler != NULL) {
-            if (memcmp(clock -> time, clock -> alarm, sizeof(hour_t)) == 0) {
+            
+            activate_alarma = memcmp(clock -> time, clock -> alarm, sizeof(hour_t)) == 0;
+            
+            if (clock -> snooze_enabled && memcmp(clock -> time, clock -> snooze_time, sizeof(hour_t)) == 0) {
+                activate_alarma = true;
+                clock -> snooze_enabled = false; // Ya cumplió, se apaga el snooze temporal
+            }
+
+            if (activate_alarma) {
                 clock -> AlarmHandler(clock);
             }
         }
@@ -220,6 +240,33 @@ bool ClockSetUpAlarm(clock_t clock, const hour_t new_alarm){
         clock -> alarm_enabled = true;
     }
     return clock -> alarm_enabled;
+}
+
+/**
+ * @brief Función para abilitar o desabilitar una alarma.
+ * @param clock variable de reloj
+ * @return Retorna el nuevo estado de la alarma (true si quedó encendida, false si apagada).
+ */
+bool ClockToggleAlarm(clock_t clock){
+    clock->alarm_enabled = !clock->alarm_enabled;
+    return clock->alarm_enabled;
+}
+
+/**
+ * @brief Función para posponer una alarma.
+ * @param clock variable de reloj
+ */
+void ClockSnoozeAlarm(clock_t clock){
+    if(clock -> alarm_enabled){
+        // El punto de partida para el snooze es la hora actual
+        memcpy(clock->snooze_time, clock->time, sizeof(hour_t));
+
+        for(int position = 0; position < SNOOZE_TIME_IN_MINUTES; position++){
+            IncreaceVectorBCD(clock -> snooze_time, MINUTE_POSITION);
+        }
+        
+        clock->snooze_enabled = true;
+    }
 }
 
 /* === End of documentation ======================================================================================== */

@@ -16,7 +16,7 @@ static const hour_t DEFOULT_TIME = {0,0,0,0,0,0}; // 00:00:00
 static const hour_t INITIAL_TIME = {1,2,3,4,5,6}; // 12:34:56
 static const hour_t INVALID_TIME = {9,9,9,9,9,9}; // 99:99:99
 
-static const hour_t ALARMA = {0,7,3,0,0,0};
+static const hour_t ALARMA = {1, 2, 3, 4, 5, 7};
 static bool alarma_sono_en_el_sistema = false;
 
 
@@ -26,7 +26,7 @@ static bool alarma_sono_en_el_sistema = false;
 
 
 void SimulateClockTicks(clock_t reloj, unsigned int ticks){
-    for(int indice = 0; indice < ticks; indice++){
+    for(int indice = 0; indice <= ticks; indice++){
         ClockNewTick(reloj);
     } 
 }
@@ -144,6 +144,7 @@ void test_prueba_hora_avanza_1_dia(void){
  * - Fijar la alarma, deshabilitarla y avanzar el reloj para que no suene.
  * - Hacer sonar la alarma y posponerla.
  * - Hacer sonar la alarma y cancelarla hasta el otro día.
+ * - La alarma no suena hasta que se configure el reloj.
  * - Decidir qué sucede con el reloj desconfigurado y el avance de la hora.
  */
 
@@ -169,8 +170,10 @@ void test_fijar_y_consultar_alarma_invalido(void) {
 
     reloj = ClockCreate(TICKS_PER_SECOND, NULL);
 
+    // Seteamos la alarma con una hora inválida
     TEST_ASSERT_FALSE(ClockSetUpAlarm(reloj, INVALID_TIME));
 
+    // Consultamos la alarma y verificamos que devuelva la hora por defecto pues no se seteó la alarma
     (void)(ClockGetAlarm(reloj, alarma_consultada));
     TEST_ASSERT_EQUAL_UINT8_ARRAY(DEFOULT_TIME, alarma_consultada, 6);
 }
@@ -180,17 +183,16 @@ void test_fijar_y_consultar_alarma_invalido(void) {
 void test_fijar_alarma_y_hacerla_sonar(void) {
     clock_t reloj;
     hour_t hora_actual;
-    const hour_t HORA_ALARMA = {1, 2, 3, 4, 5, 7}; // 12:34:57
     
-    // Inicializamos nuestra bandera espía en falso antes del test
+    // Inicializamos nuestra bandera en falso antes del test
     alarma_sono_en_el_sistema = false;
 
-    // Pasamos MockAlarmHandler en vez de NULL al crear el reloj
+    // Pasamos MockAlarmHandler
     reloj = ClockCreate(TICKS_PER_SECOND, MockAlarmHandler);
     
     // Ponemos en hora el reloj (12:34:56) y seteamos la alarma 1 segundo después (12:34:57)
     (void)ClockSetUpCurrentTime(reloj, INITIAL_TIME);
-    (void)ClockSetUpAlarm(reloj, HORA_ALARMA);
+    (void)ClockSetUpAlarm(reloj, ALARMA);
     
     // La alarma todavía NO debería haber sonado
     TEST_ASSERT_FALSE(alarma_sono_en_el_sistema);
@@ -198,8 +200,58 @@ void test_fijar_alarma_y_hacerla_sonar(void) {
     // Simulamos el paso de 1 segundo (3 ticks) para llegar a la hora exacta
     SimulateClockTicks(reloj, ONE_SECOND);
     
-    // Verificamos que el reloj haya invocado de verdad la función de la alarma
+    // Verificamos que el reloj haya invocado la función de la alarma
     TEST_ASSERT_TRUE(alarma_sono_en_el_sistema);
 }
 
 // Fijar la alarma, deshabilitarla y avanzar el reloj para que no suene.
+void test_fijar_alarma_desabilitarla_y_que_no_suene(void) {
+    clock_t reloj;
+    hour_t hora_actual;
+    
+    // Inicializamos nuestra bandera en falso antes del test
+    alarma_sono_en_el_sistema = false;
+
+    // Pasamos MockAlarmHandler
+    reloj = ClockCreate(TICKS_PER_SECOND, MockAlarmHandler);
+    
+    // Ponemos en hora el reloj (12:34:56) y seteamos la alarma 1 segundo después (12:34:57)
+    (void)ClockSetUpCurrentTime(reloj, INITIAL_TIME);
+    (void)ClockSetUpAlarm(reloj, ALARMA);
+    
+    // Desactivamos la alarma
+    ClockToggleAlarm(reloj);
+
+    // Simulamos el paso de 1 segundo (3 ticks) para llegar a la hora exacta
+    SimulateClockTicks(reloj, ONE_SECOND);
+    
+    // Verificamos que el reloj NO haya invocado la función de la alarma
+    TEST_ASSERT_FALSE(alarma_sono_en_el_sistema);
+}
+
+// Hacer sonar la alarma y posponerla.
+void test_fijar_alarma_y_posponerla(void) {
+    clock_t reloj;
+    hour_t hora_actual;
+    
+    // Inicializamos nuestra bandera en falso antes del test
+    alarma_sono_en_el_sistema = false;
+
+    // Pasamos MockAlarmHandler
+    reloj = ClockCreate(TICKS_PER_SECOND, MockAlarmHandler);
+    
+    // Ponemos en hora el reloj (12:34:56) y seteamos la alarma 1 segundo después (12:34:57)
+    (void)ClockSetUpCurrentTime(reloj, INITIAL_TIME);
+    (void)ClockSetUpAlarm(reloj, ALARMA);
+    
+    // Simulamos el paso de 1 segundo (3 ticks) para llegar a la hora exacta
+    SimulateClockTicks(reloj, ONE_SECOND);
+    
+    ClockSnoozeAlarm(reloj);
+
+    alarma_sono_en_el_sistema = false;
+    SimulateClockTicks(reloj, 60*5*ONE_SECOND);
+
+    // Verificamos que el reloj haya invocado de verdad la función de la alarma
+    TEST_ASSERT_TRUE(alarma_sono_en_el_sistema);
+}

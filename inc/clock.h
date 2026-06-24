@@ -103,6 +103,19 @@ bool ClockGetAlarm(clock_t clock, hour_t consulted_alarm);
  */
 bool ClockSetUpAlarm(clock_t clock, const hour_t new_alarm);
 
+/**
+ * @brief Función para abilitar una alarma.
+ * @param clock variable de reloj
+ * @return Retorna el nuevo estado de la alarma (true si quedó encendida, false si apagada).
+ */
+bool ClockToggleAlarm(clock_t clock);
+
+/**
+ * @brief Función para posponer una alarma.
+ * @param clock variable de reloj
+ */
+void ClockSnoozeAlarm(clock_t clock);
+
 /* === End of conditional blocks =================================================================================== */
 
 #ifdef __cplusplus
