@@ -1,3 +1,59 @@
+/*********************************************************************************************************************
+Copyright (c) 2026, Saab Araoz Melina <melinasaabaraoz@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit
+persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the
+Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+SPDX-License-Identifier: MIT
+*********************************************************************************************************************/
+
+/** @file plantilla.c
+ ** @brief Plantilla para la creación de archivos de código fuente en lenguaje C
+ **/
+
+/* === Headers files inclusions ==================================================================================== */
+
+#include "unity.h"
+#include "clock.h"
+
+/* === Macros definitions ========================================================================================== */
+
+#define TICKS_PER_SECOND 3
+#define ONE_SECOND TICKS_PER_SECOND
+#define TEN_SECONDS (10 * ONE_SECOND)
+
+#define SNOOZE_TIME_IN_MINUTES 5
+#define POSPONE_TIME_IN_HOURS 24
+
+/* === Private data type declarations ============================================================================== */
+
+static const hour_t DEFOULT_TIME = {0,0,0,0,0,0}; // 00:00:00
+static const hour_t INITIAL_TIME = {1,2,3,4,5,6}; // 12:34:56
+static const hour_t INVALID_TIME = {9,9,9,9,9,9}; // 99:99:99
+
+static const hour_t ALARMA = {1, 2, 3, 4, 5, 7};
+static bool alarma_sono_en_el_sistema = false;
+
+/* === Private function declarations =============================================================================== */
+
+/* === Private variable definitions ================================================================================ */
+
+/* === Public variable definitions ================================================================================= */
+
+/* === Private function definitions ================================================================================ */
+
+/* === Public function implementation ============================================================================== */
+
 /**
  * === PRUEBAS PARA LA ALARMA ===
  * - Probar que el create no devuelve algo nulo.
@@ -9,34 +65,26 @@
  * - Después de n ciclos de reloj la hora avanza 1 día.
 */
 
-
-#include "unity.h"
-#include "clock.h"
-static const hour_t DEFOULT_TIME = {0,0,0,0,0,0}; // 00:00:00
-static const hour_t INITIAL_TIME = {1,2,3,4,5,6}; // 12:34:56
-static const hour_t INVALID_TIME = {9,9,9,9,9,9}; // 99:99:99
-
-static const hour_t ALARMA = {1, 2, 3, 4, 5, 7};
-static bool alarma_sono_en_el_sistema = false;
-
-
-#define TICKS_PER_SECOND 3
-#define ONE_SECOND TICKS_PER_SECOND
-#define TEN_SECONDS (10 * ONE_SECOND)
-
-
+/**
+ * @brief Función que simula el paso del tiempo
+ */
 void SimulateClockTicks(clock_t reloj, unsigned int ticks){
     for(int indice = 0; indice <= ticks; indice++){
         ClockNewTick(reloj);
     } 
 }
 
-// Esta es la función ficticia que le pasamos al reloj
+/**
+ * @brief Esta es la función ficticia que le pasamos al reloj
+ */
 void MockAlarmHandler(clock_t clock) {
     alarma_sono_en_el_sistema = true;
 }
 
-// Probar que el create no devuelve algo nulo.
+
+/**
+ * @brief Probar que el create no devuelve algo nulo.
+ */
 void test_prueba_Create_GetCurrentTime(void){
     clock_t reloj;
     hour_t hora_actual = {1,2,3,4,5,6}; // 12:34:56
@@ -48,7 +96,9 @@ void test_prueba_Create_GetCurrentTime(void){
     TEST_ASSERT_EQUAL_UINT8_ARRAY(DEFOULT_TIME, hora_actual, 6);
 }
 
-// Al ajustar la hora del reloj queda en hora y es válida
+/**
+ * @brief Al ajustar la hora del reloj queda en hora y es válida
+ */
 void test_prueba_Create_GetCurrentTime_HoraValida(void){
     clock_t reloj;
     hour_t hora_actual;
@@ -62,7 +112,9 @@ void test_prueba_Create_GetCurrentTime_HoraValida(void){
 
 }
 
-// Probar que no se pone en hora (SetUpCurrentTime) si esta es invalida 
+/**
+ * @brief Probar que no se pone en hora (SetUpCurrentTime) si esta es invalida 
+ */ 
 void test_prueba_Create_GetCurrentTime_HoraInvalida(void){
     clock_t reloj;
     hour_t hora_actual;
@@ -76,7 +128,9 @@ void test_prueba_Create_GetCurrentTime_HoraInvalida(void){
     TEST_ASSERT_EQUAL_UINT8_ARRAY(DEFOULT_TIME, hora_actual, 6);
 }
 
-// Después de n ciclos de reloj la hora avanza 1 segundo
+/**
+ * @brief Después de n ciclos de reloj la hora avanza 1 segundo
+ */ 
 void test_prueba_hora_avanza_n_ciclos(void){
     clock_t reloj;
     hour_t hora_actual;
@@ -91,7 +145,9 @@ void test_prueba_hora_avanza_n_ciclos(void){
     TEST_ASSERT_EQUAL_UINT8_ARRAY(EXPECTED_TIME, hora_actual, 6);
 }
 
-// Después de n ciclos de reloj la hora avanza 10 segundo
+/**
+ * @brief Después de n ciclos de reloj la hora avanza 10 segundo
+ */ 
 void test_prueba_hora_avanza_10_segundos(void){
     clock_t reloj;
     hour_t hora_actual;
@@ -106,7 +162,9 @@ void test_prueba_hora_avanza_10_segundos(void){
     TEST_ASSERT_EQUAL_UINT8_ARRAY(EXPECTED_TIME, hora_actual, 6);
 }
 
-// Después de n ciclos de reloj la hora avanza 1 hora
+/**
+ * @brief Después de n ciclos de reloj la hora avanza 1 hora
+ */
 void test_prueba_hora_avanza_1_minuto(void){
     clock_t reloj;
     hour_t hora_actual;
@@ -121,7 +179,9 @@ void test_prueba_hora_avanza_1_minuto(void){
     TEST_ASSERT_EQUAL_UINT8_ARRAY(EXPECTED_TIME, hora_actual, 6);
 }
 
-// Después de n ciclos de reloj la hora avanza 1 dia
+/**
+ * @brief Después de n ciclos de reloj la hora avanza 1 dia
+ */
 void test_prueba_hora_avanza_1_dia(void){
     clock_t reloj;
     hour_t hora_actual;
@@ -145,10 +205,11 @@ void test_prueba_hora_avanza_1_dia(void){
  * - Hacer sonar la alarma y posponerla.
  * - Hacer sonar la alarma y cancelarla hasta el otro día.
  * - La alarma no suena hasta que se configure el reloj.
- * - Decidir qué sucede con el reloj desconfigurado y el avance de la hora.
  */
 
-// Fijar la hora de la alarma y consultarla.
+/**
+ * @brief Fijar la hora de la alarma y consultarla.
+ */
 void test_fijar_y_consultar_alarma(void) {
     clock_t reloj;
     hour_t alarma_consultada = {0,0,0,0,0,0};
@@ -163,7 +224,9 @@ void test_fijar_y_consultar_alarma(void) {
     TEST_ASSERT_EQUAL_UINT8_ARRAY(ALARMA, alarma_consultada, 6);
 }
 
-// Probar que con una alarma ivalida no se setea la alarma.
+/**
+ * @brief Probar que con una alarma ivalida no se setea la alarma.
+ */
 void test_fijar_y_consultar_alarma_invalido(void) {
     clock_t reloj;
     hour_t alarma_consultada = {0,0,0,0,0,0};
@@ -178,8 +241,9 @@ void test_fijar_y_consultar_alarma_invalido(void) {
     TEST_ASSERT_EQUAL_UINT8_ARRAY(DEFOULT_TIME, alarma_consultada, 6);
 }
 
-
-// Fijar la alarma y avanzar el reloj para que suene.
+/**
+ * @brief Fijar la alarma y avanzar el reloj para que suene.
+ */
 void test_fijar_alarma_y_hacerla_sonar(void) {
     clock_t reloj;
     hour_t hora_actual;
@@ -204,7 +268,9 @@ void test_fijar_alarma_y_hacerla_sonar(void) {
     TEST_ASSERT_TRUE(alarma_sono_en_el_sistema);
 }
 
-// Fijar la alarma, deshabilitarla y avanzar el reloj para que no suene.
+/**
+ * @brief Fijar la alarma, deshabilitarla y avanzar el reloj para que no suene.
+ */
 void test_fijar_alarma_desabilitarla_y_que_no_suene(void) {
     clock_t reloj;
     hour_t hora_actual;
@@ -229,7 +295,9 @@ void test_fijar_alarma_desabilitarla_y_que_no_suene(void) {
     TEST_ASSERT_FALSE(alarma_sono_en_el_sistema);
 }
 
-// Hacer sonar la alarma y posponerla.
+/**
+ * @brief Hacer sonar la alarma y posponerla.
+ */
 void test_fijar_alarma_y_posponerla(void) {
     clock_t reloj;
     hour_t hora_actual;
@@ -247,7 +315,9 @@ void test_fijar_alarma_y_posponerla(void) {
     // Simulamos el paso de 1 segundo (3 ticks) para llegar a la hora exacta
     SimulateClockTicks(reloj, ONE_SECOND);
     
-    ClockSnoozeAlarm(reloj);
+    TEST_ASSERT_TRUE(alarma_sono_en_el_sistema);
+
+    ClockSnoozeAlarm(reloj, SNOOZE_TIME_IN_MINUTES);
 
     alarma_sono_en_el_sistema = false;
     SimulateClockTicks(reloj, 60*5*ONE_SECOND);
@@ -255,3 +325,54 @@ void test_fijar_alarma_y_posponerla(void) {
     // Verificamos que el reloj haya invocado de verdad la función de la alarma
     TEST_ASSERT_TRUE(alarma_sono_en_el_sistema);
 }
+
+/**
+ * @brief Hacer sonar la alarma y cancelarla hasta el otro día.
+ */
+void test_fijar_alarma_y_cancelarla(void) {
+    clock_t reloj;
+    hour_t hora_actual;
+    
+    // Inicializamos nuestra bandera en falso antes del test
+    alarma_sono_en_el_sistema = false;
+
+    // Pasamos MockAlarmHandler
+    reloj = ClockCreate(TICKS_PER_SECOND, MockAlarmHandler);
+    
+    // Ponemos en hora el reloj (12:34:56) y seteamos la alarma 1 segundo después (12:34:57)
+    (void)ClockSetUpCurrentTime(reloj, INITIAL_TIME);
+    (void)ClockSetUpAlarm(reloj, ALARMA);
+    
+    // Simulamos el paso de 1 segundo (3 ticks) para llegar a la hora exacta
+    SimulateClockTicks(reloj, ONE_SECOND);
+    
+    TEST_ASSERT_TRUE(alarma_sono_en_el_sistema);
+
+    ClockSnoozeAlarm(reloj, POSPONE_TIME_IN_HOURS);
+
+    alarma_sono_en_el_sistema = false;
+    SimulateClockTicks(reloj, 3600*24*ONE_SECOND);
+
+    // Verificamos que el reloj haya invocado de verdad la función de la alarma
+    TEST_ASSERT_TRUE(alarma_sono_en_el_sistema);
+}
+
+/**
+ * @brief La alarma no suena hasta que se configure el reloj.
+ */
+void test_fijar_alarma_y_no_suena_hasta_configurar_reloj(void) {
+    clock_t reloj;
+    hour_t hora_actual;
+    
+    // Inicializamos nuestra bandera en falso antes del test
+    alarma_sono_en_el_sistema = false;
+
+    // Pasamos MockAlarmHandler
+    reloj = ClockCreate(TICKS_PER_SECOND, MockAlarmHandler);
+   
+    (void)ClockSetUpAlarm(reloj, DEFOULT_TIME);
+    
+    TEST_ASSERT_FALSE(alarma_sono_en_el_sistema);
+}
+
+/* === End of documentation ======================================================================================== */

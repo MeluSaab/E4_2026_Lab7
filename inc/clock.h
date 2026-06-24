@@ -114,7 +114,7 @@ bool ClockToggleAlarm(clock_t clock);
  * @brief Función para posponer una alarma.
  * @param clock variable de reloj
  */
-void ClockSnoozeAlarm(clock_t clock);
+void ClockSnoozeAlarm(clock_t clock, uint16_t pospone_time);
 
 /* === End of conditional blocks =================================================================================== */
 

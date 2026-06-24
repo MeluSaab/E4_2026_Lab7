@@ -35,6 +35,7 @@ SPDX-License-Identifier: MIT
 #define HOURS_POSITION 1
 
 #define SNOOZE_TIME_IN_MINUTES 5
+#define POSPONE_TIME_IN_HOURS 24
 
 /* === Private data type declarations ============================================================================== */
 
@@ -256,16 +257,27 @@ bool ClockToggleAlarm(clock_t clock){
  * @brief Función para posponer una alarma.
  * @param clock variable de reloj
  */
-void ClockSnoozeAlarm(clock_t clock){
+void ClockSnoozeAlarm(clock_t clock, uint16_t pospone_time){
     if(clock -> alarm_enabled){
+
         // El punto de partida para el snooze es la hora actual
         memcpy(clock->snooze_time, clock->time, sizeof(hour_t));
-
-        for(int position = 0; position < SNOOZE_TIME_IN_MINUTES; position++){
-            IncreaceVectorBCD(clock -> snooze_time, MINUTE_POSITION);
-        }
         
-        clock->snooze_enabled = true;
+        // Si se quiere posponer la alarma
+        if(pospone_time == SNOOZE_TIME_IN_MINUTES){
+            for(int position = 0; position < SNOOZE_TIME_IN_MINUTES; position++){
+                IncreaceVectorBCD(clock -> snooze_time, MINUTE_POSITION);
+            }
+            clock->snooze_enabled = true;
+        }
+
+        // Si se quiere cancelar la larma
+        if(pospone_time == POSPONE_TIME_IN_HOURS){
+            for(int position = 0; position < POSPONE_TIME_IN_HOURS; position++){
+                IncreaceVectorBCD(clock -> snooze_time, HOURS_POSITION);
+            }
+            clock->snooze_enabled = true;
+        }
     }
 }
 
