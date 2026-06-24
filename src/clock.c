@@ -29,18 +29,37 @@ SPDX-License-Identifier: MIT
 /* === Macros definitions ========================================================================================== */
 
 #define CLOCK_SIZE_BCD 6
+
 #define SECONDS_POSITION 5
 #define MINUTE_POSITION 3
 #define HOURS_POSITION 1
 
 /* === Private data type declarations ============================================================================== */
 
+/**
+ * @brief Estructura del reloj
+ * @param time Guarda la hora del reloj
+ * @param time_is_valid Especifica si la hora que muestra el reloj es válida
+ * @param tick_per_second Guarda los ciclos necesarios que deben pasar para 1 segundo
+ * @param tick_countewr Guarda la cuenta de cuantos ticks ocurrieron para saber si paso o no 1 segundo
+ * @param alarm Guarda la alarma seteada
+ * @param alarm_enabled Esppecifica si la alarma está activada
+ * @param AlarmHandler Función que maneja el evento de la alarma
+ */
 struct clock_s{
     hour_t time;
     bool time_is_valid;
     unsigned int ticks_per_second;
     uint16_t ticks_counter;
+
+    hour_t alarm;
+    bool alarm_enabled;
+    clock_event_t AlarmHandler;
 };
+
+static const uint8_t SECOND_MINUTE_LIMIT[2] = {6,0};
+static const uint8_t HOUR_LIMIT[2]= {2,4};  // Reloj 24 horas
+// static const uint8_t HOUR_LIMIT[2]= {1,2};  // Reloj 12 horas
 
 /* === Private function declarations =============================================================================== */
 
@@ -71,7 +90,7 @@ static void IncreaceTimeBCD(clock_t clock, uint8_t position){
         IncreaceTimeBCD(clock, position-1);
 
         if(position == SECONDS_POSITION || position == MINUTE_POSITION){
-            if(clock -> time[position-1] == 6){
+            if(clock -> time[position-1] == SECOND_MINUTE_LIMIT[0]){
                 clock -> time[position-1] = 0;
                 IncreaceTimeBCD(clock, position-2);
             }
@@ -79,7 +98,7 @@ static void IncreaceTimeBCD(clock_t clock, uint8_t position){
     }
 
     if(position == HOURS_POSITION){
-        if(clock -> time[position-1] >= 2 && clock -> time[position] == 4){
+        if(clock -> time[position-1] >= HOUR_LIMIT[0] && clock -> time[position] == HOUR_LIMIT[1]){
             memset(clock -> time, 0, sizeof(hour_t));
         }
     }
@@ -114,13 +133,17 @@ static bool ValidHour(hour_t hour){
  * @param ticks_per_second variables que indica la cantidad de ciclos por segundo ?
  * @param alarm_handler puntero a una función de alarma
  */
-clock_t ClockCreate(unsigned int ticks_per_second, void * alarm_handler){
+clock_t ClockCreate(unsigned int ticks_per_second, clock_event_t alarm_handler){
     static struct clock_s instance;
     clock_t self = &instance;
     self -> ticks_per_second = ticks_per_second;
     self -> ticks_counter = 0;
     self -> time_is_valid = false;
     memset(self -> time, 0, sizeof(hour_t));
+
+    self -> alarm_enabled = false;
+    self -> AlarmHandler = alarm_handler;
+    memset(self -> alarm, 0, sizeof(hour_t));
 
     return self;
 }
@@ -132,7 +155,9 @@ clock_t ClockCreate(unsigned int ticks_per_second, void * alarm_handler){
  * @return retorna verdadero si la hora es valida y falso si es invalida
  */
 bool ClockGetCurrentTime(clock_t clock, hour_t current_hour){
-    memcpy(current_hour, clock -> time, sizeof(hour_t));
+    if(current_hour != NULL){
+        memcpy(current_hour, clock -> time, sizeof(hour_t));
+    }
     return clock -> time_is_valid;
 }
 
@@ -160,7 +185,41 @@ void ClockNewTick(clock_t clock){
     if(clock -> ticks_counter >= clock -> ticks_per_second){
         clock -> ticks_counter = 0;
         IncreaceTimeBCD(clock, SECONDS_POSITION);
+
+        // --- CONTROL DE ALARMA ---
+        if (clock -> alarm_enabled && clock -> AlarmHandler != NULL) {
+            if (memcmp(clock -> time, clock -> alarm, sizeof(hour_t)) == 0) {
+                clock -> AlarmHandler(clock);
+            }
+        }
     }
+}
+
+/**
+ * @brief Función para obtener la alarma seteada.
+ * @param clock variable de reloj
+ * @param consulted_alarm variable a la cual se le da la alrma seteada
+ * @return retorna verdadero si la alarma es valida y falso si es invalida
+ */
+bool ClockGetAlarm(clock_t clock, hour_t consulted_alarm){
+    if(consulted_alarm != NULL){
+        memcpy(consulted_alarm, clock -> alarm, sizeof(hour_t));
+    }
+    return clock -> alarm_enabled;
+}
+
+/**
+ * @brief Función para establecer una alarma.
+ * @param clock variable de reloj
+ * @param new_hour variable con la hora que se quiere establecer
+ * @return retorna verdadero si la hora es valioda y falso si es invalida
+ */
+bool ClockSetUpAlarm(clock_t clock, const hour_t new_alarm){
+    if(ValidHour(new_alarm)){
+        memcpy(clock -> alarm, new_alarm, sizeof(hour_t));
+        clock -> alarm_enabled = true;
+    }
+    return clock -> alarm_enabled;
 }
 
 /* === End of documentation ======================================================================================== */

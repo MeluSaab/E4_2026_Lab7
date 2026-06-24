@@ -49,6 +49,11 @@ typedef struct clock_s * clock_t;
  */
 typedef uint8_t hour_t[6];
 
+/**
+ * @brief Función que maneja el evento de la alarma
+ */
+typedef void (*clock_event_t)(clock_t clock);
+
 /* === Public variable declarations ================================================================================ */
 
 /* === Public function declarations ================================================================================ */
@@ -58,7 +63,7 @@ typedef uint8_t hour_t[6];
  * @param ticks_per_second variable que indica la cantidad de ciclos por segundo ?
  * @param alarm_handler puntero a una función de alarma
  */
-clock_t ClockCreate(unsigned int ticks_per_second, void * alarm_handler);
+clock_t ClockCreate(unsigned int ticks_per_second, clock_event_t alarm_handler);
 
 /**
  * @brief Función para obtener la hora.
@@ -82,7 +87,21 @@ bool ClockSetUpCurrentTime(clock_t clock, const hour_t new_hour);
  */
 void ClockNewTick(clock_t clock);
 
+/**
+ * @brief Función para obtener la alarma seteada.
+ * @param clock variable de reloj
+ * @param consulted_alarm variable a la cual se le da la alrma seteada
+ * @return retorna verdadero si la alarma es valida y falso si es invalida
+ */
+bool ClockGetAlarm(clock_t clock, hour_t consulted_alarm);
 
+/**
+ * @brief Función para establecer una alarma.
+ * @param clock variable de reloj
+ * @param new_hour variable con la hora que se quiere establecer
+ * @return retorna verdadero si la hora es valioda y falso si es invalida
+ */
+bool ClockSetUpAlarm(clock_t clock, const hour_t new_alarm);
 
 /* === End of conditional blocks =================================================================================== */
 
