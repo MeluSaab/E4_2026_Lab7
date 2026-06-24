@@ -9,19 +9,20 @@
 #include "clock.h"
 static const hour_t DEFOULT_TIME = {0,0,0,0,0,0};
 static const hour_t INITIAL_TIME = {1,2,3,4,5,6};
+static const hour_t INVALID_TIME = {9,9,9,9,9,9};
 
 #define TICKS_PER_SECOND 3
 #define ONE_SECOND TICKS_PER_SECOND
 #define TEN_SECONDS (10 * ONE_SECOND)
 
 void SimulateClockTicks(clock_t reloj, unsigned int ticks){
-    for(int indice = 0; indice <= 3; indice++){
+    for(int indice = 0; indice <= ticks; indice++){
         ClockNewTick(reloj);
     } 
 }
 
 // Probar que el create no devuelve algo nulo.
-void test_prueba_Create_GetCurrentTime_invalido(void){
+void test_prueba_Create_GetCurrentTime(void){
     clock_t reloj;
     hour_t hora_actual = {1,2,3,4,5,6};
 
@@ -33,12 +34,10 @@ void test_prueba_Create_GetCurrentTime_invalido(void){
 }
 
 // Al ajustar la hora del reloj queda en hora y es válida
-void test_prueba_Create_GetCurrentTime_valido(void){
+void test_prueba_Create_GetCurrentTime_HoraValida(void){
     clock_t reloj;
     hour_t hora_actual;
 
-    // 1 es ticks_per_second
-    // NULL es AlarmHandler
     reloj = ClockCreate(1, NULL);
 
     // RelojSetUpCurrentTime devuelve TRUE porque la hora es válida.
@@ -48,14 +47,26 @@ void test_prueba_Create_GetCurrentTime_valido(void){
 
 }
 
+// Probar que no se pone en hora (SetUpCurrentTime) si esta es invalida 
+void test_prueba_Create_GetCurrentTime_HoraInvalida(void){
+    clock_t reloj;
+    hour_t hora_actual;
+
+    reloj = ClockCreate(3, NULL);
+
+    // RelojSetUpCurrentTime devuelve FALSE porque la hora es inválida.
+    TEST_ASSERT_FALSE(ClockSetUpCurrentTime(reloj, INVALID_TIME));
+    ClockGetCurrentTime(reloj, hora_actual);
+    //La hora al no ser válida el reloj debe seguir teniendo la hora por defecto
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(DEFOULT_TIME, hora_actual, 6);
+}
+
 // Después de n ciclos de reloj la hora avanza 1 segundo
 void test_prueba_hora_avanza_n_ciclos(void){
     clock_t reloj;
     hour_t hora_actual;
     static const hour_t EXPECTED_TIME = {1,2,3,4,5,7};
 
-    // 1 es ticks_per_second
-    // NULL es AlarmHandler
     reloj = ClockCreate(TICKS_PER_SECOND, NULL);
     (void)ClockSetUpCurrentTime(reloj, INITIAL_TIME);
     
@@ -69,10 +80,8 @@ void test_prueba_hora_avanza_n_ciclos(void){
 void test_prueba_hora_avanza_10_segundos(void){
     clock_t reloj;
     hour_t hora_actual;
-    static const hour_t EXPECTED_TIME = {1,2,3,4,6,6};
+    static const hour_t EXPECTED_TIME = {1,2,3,5,0,6};
 
-    // 1 es ticks_per_second
-    // NULL es AlarmHandler
     reloj = ClockCreate(TICKS_PER_SECOND, NULL);
     (void)ClockSetUpCurrentTime(reloj, INITIAL_TIME);
     
@@ -82,4 +91,32 @@ void test_prueba_hora_avanza_10_segundos(void){
     TEST_ASSERT_EQUAL_UINT8_ARRAY(EXPECTED_TIME, hora_actual, 6);
 }
 
-// Probar que no se pone en hora (SetUpCurrentTime) si esta es invalida 
+// Después de n ciclos de reloj la hora avanza 1 hora
+void test_prueba_hora_avanza_1_minuto(void){
+    clock_t reloj;
+    hour_t hora_actual;
+    static const hour_t EXPECTED_TIME = {1,3,3,4,5,6};
+
+    reloj = ClockCreate(TICKS_PER_SECOND, NULL);
+    (void)ClockSetUpCurrentTime(reloj, INITIAL_TIME);
+    
+    SimulateClockTicks(reloj, 3600*ONE_SECOND);
+
+    ClockGetCurrentTime(reloj, hora_actual);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(EXPECTED_TIME, hora_actual, 6);
+}
+
+// Después de n ciclos de reloj la hora avanza 1 dia
+void test_prueba_hora_avanza_1_dia(void){
+    clock_t reloj;
+    hour_t hora_actual;
+    static const hour_t EXPECTED_TIME = {1,2,3,4,5,6};
+
+    reloj = ClockCreate(TICKS_PER_SECOND, NULL);
+    (void)ClockSetUpCurrentTime(reloj, INITIAL_TIME);
+    
+    SimulateClockTicks(reloj, 24*3600*ONE_SECOND);
+
+    ClockGetCurrentTime(reloj, hora_actual);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(EXPECTED_TIME, hora_actual, 6);
+}

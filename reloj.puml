@@ -1,0 +1,33 @@
+@startuml Clock Service
+Set separator none
+hide empty members
+
+package "reloj.h" {
+    
+    interface clock_event_t {
+    }
+
+    class clock_t {
+        - time
+        - alarm
+        - ticks_count
+        - ticks_per_second
+        - time_is_valid
+        - alarm_enabled
+        - AlarmHandler
+        --
+        + Create()
+        + GetCurrentTime()
+        + SetupCurrentTime()
+        + NewTick()
+        + SetupAlarm()
+        + GetAlarm()
+        + TogleAlarm()
+    }
+
+    interface clock_event_t{
+    }
+    clock_t --> clock_event_t
+}
+
+@enduml
